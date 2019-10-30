@@ -1,7 +1,7 @@
 ## READ ME BEFORE USING IT
 
 input example:
-`student:///home/junk_chuan/Desktop/drcom.py`
+`student:///home/junk_chuan/Desktop/help.md`
 
 the string `student://` means you use the student protocol.
 
@@ -17,15 +17,15 @@ the type of the file
 
 |type  |encode  |
 |------|--------|
-|.txt  |0000    |
-|.html |0001    |
-|.jpg  |0010    |
-|.png  |0011    |
-|.json |0100    |
-|.mp3  |0101    |
-|.mp4  |0110    |
-|.xml  |0111    |
-|.md   |1000    |
+|.txt  |01000000|
+|.html |01000001|
+|.jpg  |01000010|
+|.png  |01000011|
+|.json |01000100|
+|.mp3  |01000101|
+|.mp4  |01000110|
+|.xml  |01000111|
+|.md   |01001000|
 
 
 #### the third layer

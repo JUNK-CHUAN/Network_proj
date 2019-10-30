@@ -7,65 +7,10 @@
 #include <fcntl.h>
 #include <zconf.h>
 #include "PakType.h"
+#include "PakStuInfo.h"
 
 #define PATHLEN 50U  // 输入路径的长度限制
 #define PROTLEN 10U  // 协议的长度，即'student://'
-
-//----------------------------------字符串操作函数------------------------------------
-/*
- * 字符串操作：
- * 系统库函数：
- *     char *strcat(char *str_des, char *str_sou);
- *     将字符串str_sou接在字符串str_des后面（放在str_des的最后字符和“\0”之间）
- * 自定义函数：
- *     字符串匹配函数int strmatch(char line[], char *mat)
- *     字符串切割函数char *strcut(char *str_des, unsigned int *size1, unsigned int *size2)
- */
-
-/*
- * 自定义字符串切割函数
- * param.str_des:待分割字符串,函数执行后变为数组后半段
- * param.size1:分割后前半段的长度(不计'\0')
- * param.size2:待分割字符串的总的长度(不计'\0')
- * return:前半段字符串
- */
-char *strprotocol(char *str_des, unsigned int size1)
-{
-    // 分配内存截取前半段字符串
-    char  *str_pre = (char *)malloc(sizeof(char) * (size1 + 1));
-    str_pre = strncpy(str_pre, str_des, size1);
-    str_pre[size1] = '\0';
-    // debug dump
-    // printf("%s\n", str_pre);
-
-    return str_pre;
-}
-
-/*
- * 字符串匹配函数
- * param.line: 输入字符串
- * param.mat: 匹配对应字符串
- * 完全相同返回1，
- * 否则返回0
- */
-int strmatch(char line[], char *mat)
-{
-    assert(line);
-    assert(mat);
-    int i = strlen(line), j = 0, k = 0;
-    if (i == strlen(mat))
-    {
-        for (; j < strlen(mat); j++, k++)
-        {
-            if (line[k] != *(mat + j))
-                break;
-        }
-        if (*(mat + j) == '\0' && k>0)
-            return 1;
-    }
-    return 0;
-}
-
 
 //---------------------------------------文件操作函数--------------------------------
 /*
@@ -141,14 +86,22 @@ int main()
     char *protocol;   // 创建一个protocol字符串储存输入的协议
     protocol = strprotocol(path, PROTLEN);      // 字符串分割，protocol储存协议，path储存地址
     strcpy(path, path + PROTLEN);
+    int i = 0;
+    while (path[i] != '\n')
+        i++;
+    path[i] = '\0';
     char standard[PROTLEN + 1] = "student://";  // 创建一个标准字符串，表示我们唯一可识别的协议
     if (strmatch(protocol, standard))           // 若协议符合学生协议的standard
     {
         char * data = loadfile(path);
-        printf("%s\n", protocol);
-        printf("%s\n", path);
-        printf("%s\n",data);
-        free(data);
+        free(protocol);
+        protocol = NULL;
+        unsigned int DataSize = file_size(path);
+
+        data = PackageTypeInfo(data, path, &DataSize);  // 实现顶层数据封装
+        data = addIdInfo(data, DataSize);
+        DataSize += 4;
+        // printf("test: %s\n", data);
         // doing
     }
     else // 若协议与学生协议不符合
@@ -159,7 +112,5 @@ int main()
         exit(0);
     }
 
-    free(protocol);
-    free(path);
     return 0;
 }

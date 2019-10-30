@@ -1,0 +1,30 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/junk_chuan/CLionProjects/Network_Proj/PakType.h
+
+/home/junk_chuan/CLionProjects/Network_Proj/main.cpp
+stdio.h
+-
+stdlib.h
+-
+string.h
+-
+sys/stat.h
+-
+assert.h
+-
+sys/types.h
+-
+fcntl.h
+-
+zconf.h
+-
+PakType.h
+/home/junk_chuan/CLionProjects/Network_Proj/PakType.h
+
