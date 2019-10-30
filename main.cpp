@@ -98,10 +98,19 @@ int file_size(char * filename)
  * 将文件加载到字节数组
  * 函数返回字符串char *
  */
-char *loadfile(char * fielname)
+char *loadfile(char * filename)
 {
-    unsigned int FileLen = file_size(fielname);
-    char * buffer = (char *)malloc(sizeof(char) * FileLen);
+    FILE *fp;
+    if ((fp = fopen(filename, "rb")) == NULL)
+    {
+        printf("The file cannot open, please check your path.");
+        exit(0);
+    }
+
+    unsigned int FileLen = file_size(filename);
+    char *buffer = (char *) malloc(sizeof(char) * FileLen); // 根据文件大小动态分配内存
+    fread(buffer, sizeof(char), FileLen, fp);
+    return buffer;
 }
 
 
@@ -138,6 +147,8 @@ int main()
     char standard[PROTLEN + 1] = "student://";  // 创建一个标准字符串，表示我们唯一可识别的协议
     if (strmatch(protocol, standard))           // 若协议符合学生协议的standard
     {
+        char * data = loadfile(path);
+        free(data);
         // doing
     }
     else // 若协议与学生协议不符合
