@@ -1,12 +1,12 @@
-/*
- * 文件students.txt的格式：78457,杨,48,74,48
- * 实现了用‘ ，’来分割并打印出来了  可是怎么存到数组里面呢
- */
-#include "stdio.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <assert.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <zconf.h>
+#include "PakType.h"
 
 #define PATHLEN 50U  // 输入路径的长度限制
 #define PROTLEN 10U  // 协议的长度，即'student://'
@@ -29,27 +29,14 @@
  * param.size2:待分割字符串的总的长度(不计'\0')
  * return:前半段字符串
  */
-char *strcut(char *str_des, unsigned int *size1, unsigned int *size2)
+char *strprotocol(char *str_des, unsigned int size1)
 {
     // 分配内存截取前半段字符串
-    char *str_pre = (char *)malloc(sizeof(char) * (*size1 + 1));
-    for (unsigned int i = 0; i < *size1; ++i) {
-        str_pre[i] = str_des[i];
-    }
-    str_pre[*size1] = '\0';
-
-    // 分配内存截取后半段字符串
-    char *str_post = (char *)malloc(sizeof(char) * (*size2 - *size1 + 1));
-    for (unsigned int j = 0; j < *size2 - *size1; ++j) {
-        str_post[j] = str_des[j + *size2];
-    }
-    str_post[*size2 - *size1] = '\0';
-
-    // 处理str_des(修改原数组大小，变为数组后半段并free资源)
-    char *temp;
-    temp = str_des;     // 将temp指向原数组首地址
-    str_des = str_post; // 将数组后半段赋值更新
-    free(temp);         // 释放原数组
+    char  *str_pre = (char *)malloc(sizeof(char) * (size1 + 1));
+    str_pre = strncpy(str_pre, str_des, size1);
+    str_pre[size1] = '\0';
+    // debug dump
+    // printf("%s\n", str_pre);
 
     return str_pre;
 }
@@ -100,17 +87,25 @@ int file_size(char * filename)
  */
 char *loadfile(char * filename)
 {
-    FILE *fp;
-    if ((fp = fopen(filename, "rb")) == NULL)
-    {
-        printf("The file cannot open, please check your path.");
-        exit(0);
-    }
+    printf("%s\n", filename);
+    int fd = open(filename, O_RDONLY);
+    printf("文件描述符： %d\n", fd);
 
     unsigned int FileLen = file_size(filename);
     char *buffer = (char *) malloc(sizeof(char) * FileLen); // 根据文件大小动态分配内存
-    fread(buffer, sizeof(char), FileLen, fp);
-    return buffer;
+
+    int readBytes = read(fd, buffer, sizeof(char) * FileLen);
+    if (readBytes == sizeof(char) * FileLen)
+    {
+        printf("Read file successfully.\n");
+        return buffer;
+    } else
+    {
+        printf("The size of file: %d.\n", int(sizeof(char) * FileLen));
+        printf("The Bytes actually read: %d.\n", readBytes);
+        printf("Exit.\n");
+        exit(0);
+    }
 }
 
 
@@ -131,7 +126,9 @@ int getline(char line[], int max)
         line[i++] = '\n';
     line[i] = '\0';
     if (i > 0)
+    {
         return 1;
+    }
     else
         return 0;
 }
@@ -141,13 +138,16 @@ int main()
     printf("Please input the file you want to transfer with the protocol.\n");
     char * path = (char *)malloc(sizeof(char) * PATHLEN);
     getline(path, PATHLEN);                     // 获取输入的路径(带协议名)
-    char * protocol = (char *)malloc(sizeof(char) * (PROTLEN + 1));   // 创建一个protocol字符串储存输入的协议
-    protocol = strcut(path, reinterpret_cast<unsigned int *>(PROTLEN),
-            reinterpret_cast<unsigned int *>(PATHLEN));              // 字符串分割，protocol储存协议，path储存地址
+    char *protocol;   // 创建一个protocol字符串储存输入的协议
+    protocol = strprotocol(path, PROTLEN);      // 字符串分割，protocol储存协议，path储存地址
+    strcpy(path, path + PROTLEN);
     char standard[PROTLEN + 1] = "student://";  // 创建一个标准字符串，表示我们唯一可识别的协议
     if (strmatch(protocol, standard))           // 若协议符合学生协议的standard
     {
         char * data = loadfile(path);
+        printf("%s\n", protocol);
+        printf("%s\n", path);
+        printf("%s\n",data);
         free(data);
         // doing
     }
