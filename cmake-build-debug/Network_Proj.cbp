@@ -84,6 +84,9 @@
 				</MakeCommands>
 			</Target>
 		</Build>
+		<Unit filename="/home/junk_chuan/CLionProjects/Network_Proj/PakSlice.h">
+			<Option target="Network_Proj"/>
+		</Unit>
 		<Unit filename="/home/junk_chuan/CLionProjects/Network_Proj/PakStuInfo.h">
 			<Option target="Network_Proj"/>
 		</Unit>

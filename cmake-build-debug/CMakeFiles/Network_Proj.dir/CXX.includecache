@@ -6,6 +6,16 @@
 
 #IncludeRegexTransform: 
 
+/home/junk_chuan/CLionProjects/Network_Proj/PakStuInfo.h
+stdio.h
+-
+math.h
+-
+malloc.h
+-
+string.h
+-
+
 /home/junk_chuan/CLionProjects/Network_Proj/PakType.h
 
 /home/junk_chuan/CLionProjects/Network_Proj/main.cpp
@@ -27,4 +37,6 @@ zconf.h
 -
 PakType.h
 /home/junk_chuan/CLionProjects/Network_Proj/PakType.h
+PakStuInfo.h
+/home/junk_chuan/CLionProjects/Network_Proj/PakStuInfo.h
 
