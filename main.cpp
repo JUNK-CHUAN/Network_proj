@@ -2,14 +2,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <assert.h>
 #include <sys/types.h>
 #include <fcntl.h>
 #include <zconf.h>
+#include <uuid/uuid.h>
 #include "PakType.h"
 #include "PakStuInfo.h"
+#include "PakSlice.h"
+#include "PakCheck.h"
 
-#define PATHLEN 50U  // 输入路径的长度限制
+#define PATHLEN 100U  // 输入路径的长度限制
 #define PROTLEN 10U  // 协议的长度，即'student://'
 
 //---------------------------------------文件操作函数--------------------------------
@@ -78,6 +80,19 @@ int getline(char line[], int max)
         return 0;
 }
 
+//-------------------------------------主函数---------------------------------
+/*
+ * 将读取的文件添加头部
+ * 进行分组
+ * 再添加校验码
+ * 最后分块存入临时文件
+ */
+
+// BASE_DIR为临时文件存放的文件夹
+const char BASE_DIR[PATHLEN] = "/home/junk_chuan/Desktop/temp/";
+// 设置临时文件的后缀为.pak
+const char POST_FIX[5] = ".pak";
+
 int main()
 {
     printf("Please input the file you want to transfer with the protocol.\n");
@@ -93,16 +108,57 @@ int main()
     char standard[PROTLEN + 1] = "student://";  // 创建一个标准字符串，表示我们唯一可识别的协议
     if (strmatch(protocol, standard))           // 若协议符合学生协议的standard
     {
+        /* 若协议正确则读取文件数据 */
         char * data = loadfile(path);
+        // 读取文件后释放内存
         free(protocol);
         protocol = NULL;
         unsigned int DataSize = file_size(path);
 
+        // 自顶而下的第一层封装
         data = PackageTypeInfo(data, path, &DataSize);  // 实现顶层数据封装
+
+        // 自顶而下的第二层封装
         data = addIdInfo(data, DataSize);
         DataSize += 4;
-        // printf("test: %s\n", data);
-        // doing
+
+        // 自顶而下的第三层封装
+        unsigned int piece = 0;
+        unsigned int left = 0;
+        // 将数据分组之后存入二维数组
+        char **SliceData = PakSlice(data, &DataSize, &piece, &left);
+
+        // 添加CRC校验码
+        for (int i = 0; i < piece-1; ++i) {
+            SliceData[i] = CRC(SliceData[i]);
+        }
+        SliceData[piece] = CRC(SliceData[piece-1], left);
+
+        // 利用uuid生成唯一标识符，以免存储时文件名重复
+        uuid_t uuid;
+        char *filepath = (char *)malloc(sizeof(char) * PATHLEN);
+        char str[37];
+        int fd, count;
+        for (int i = 0; i < piece; ++i)
+        {
+            // 生成唯一标识符
+            uuid_generate(uuid);
+            uuid_unparse(uuid, str);
+            // 利用唯一标识符生成唯一的文件路径
+            memset(filepath, '\0', sizeof(filepath));
+            strcat(filepath, BASE_DIR);
+            strcat(filepath, str);
+            strcat(filepath, POST_FIX);
+            //printf("%s\n", filepath);
+            // 创建文件并以读写方式打开
+            fd = open(filepath, O_RDWR | O_CREAT, S_IRWXU | S_IRUSR | S_IWUSR);
+            //printf("%d\n", fd);
+            // 将每组数据写入临时文件
+            count = write(fd, SliceData[i], 1004);
+            //printf("write %d bytes over\n", count);
+            close(fd);
+        }
+        /* doing */
     }
     else // 若协议与学生协议不符合
     {

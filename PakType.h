@@ -45,8 +45,6 @@ char *strprotocol(char *str_des, unsigned int size1)
  */
 int strmatch(char line[], char *mat)
 {
-    assert(line);
-    assert(mat);
     int i = strlen(line), j = 0, k = 0;
     if (i == strlen(mat))
     {

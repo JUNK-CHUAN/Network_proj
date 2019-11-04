@@ -3,4 +3,4 @@ project(Network_Proj)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(Network_Proj main.cpp PakType.h PakStuInfo.h PakSlice.h)
+add_executable(Network_Proj main.cpp PakType.h PakStuInfo.h PakSlice.h PakCheck.h)
