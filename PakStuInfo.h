@@ -68,6 +68,7 @@ int binatodec(int n) {
 char* addIdInfo(char* data, int filesize) {
     char *ptr = NULL;
     ptr = (char*)malloc((filesize + 4) * sizeof(char));
+    memset(ptr,'\0', sizeof(ptr));
     char *idf0 = (char*)"teacher";
     char *idf1 = (char*)"freshman";
     char *idf2 = (char*)"sophomore";

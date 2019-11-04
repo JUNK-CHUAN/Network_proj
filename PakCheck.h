@@ -38,26 +38,27 @@ u_int8_t Get_Crc8(u_int8_t *ptr,u_int16_t len) {
 char* CRC(char *data, int length = 1003) {
     char *ptr = NULL;
     u_int8_t *p = NULL;
-    int tempint;
+    int i;
     char tempchar[2];
-    u_int8_t tempu;
     ptr = (char*)malloc((length + 1) * sizeof(char));//给即将分配给长度加一的数组做准备
-    char a, b, c;
+    memset(ptr, '\0', sizeof(ptr));
+    int a[3];
     // using the first byte and second byte of second layer head
     // and the first byte of second layer data
-    a = data[0];
-    b = data[1];
-    c = data[2];
-    u_int8_t pt[3] = {u_int8_t(int(a)),u_int8_t(int(b)),u_int8_t(int(c))};//传参方式
+    for(i = 0;i < 3;i++) {
+        if(data[i] < 0) a[i] = data[i] + 256;
+        else a[i] = data[i];
+    }
+    u_int8_t pt[3] = {(u_int8_t)(a[0]),(u_int8_t)(a[1]),(u_int8_t)(a[2])};//传参方式
     p = pt;
 
-    tempu = Get_Crc8(p,3);
-    tempint = int(tempu);
-    tempchar[0] = char(tempint);
+
+    tempchar[0] = char(Get_Crc8(p,3));
     tempchar[1] = '\0';//结尾
     strcat(ptr, tempchar);
     strcat(ptr, data);
-    printf("%s\n", ptr);
+
+    // 释放内存
     free(data);
     data = NULL;
     return ptr;

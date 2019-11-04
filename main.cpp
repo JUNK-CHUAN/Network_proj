@@ -36,7 +36,7 @@ char *loadfile(char * filename)
 {
     printf("%s\n", filename);
     int fd = open(filename, O_RDONLY);
-    printf("文件描述符： %d\n", fd);
+    //printf("文件描述符： %d\n", fd);
 
     unsigned int FileLen = file_size(filename);
     char *buffer = (char *) malloc(sizeof(char) * FileLen); // 根据文件大小动态分配内存
@@ -48,7 +48,7 @@ char *loadfile(char * filename)
         return buffer;
     } else
     {
-        printf("The size of file: %d.\n", int(sizeof(char) * FileLen));
+        printf("The size of file: %d.\n", (int)(sizeof(char) * FileLen));
         printf("The Bytes actually read: %d.\n", readBytes);
         printf("Exit.\n");
         exit(0);
@@ -132,14 +132,14 @@ int main()
         for (int i = 0; i < piece-1; ++i) {
             SliceData[i] = CRC(SliceData[i]);
         }
-        SliceData[piece] = CRC(SliceData[piece-1], left);
+        SliceData[piece-1] = CRC(SliceData[piece-1], left);
 
         // 利用uuid生成唯一标识符，以免存储时文件名重复
         uuid_t uuid;
         char *filepath = (char *)malloc(sizeof(char) * PATHLEN);
         char str[37];
         int fd, count;
-        for (int i = 0; i < piece; ++i)
+        for (int i = 0; i < piece-1; ++i)
         {
             // 生成唯一标识符
             uuid_generate(uuid);
@@ -149,15 +149,32 @@ int main()
             strcat(filepath, BASE_DIR);
             strcat(filepath, str);
             strcat(filepath, POST_FIX);
-            //printf("%s\n", filepath);
             // 创建文件并以读写方式打开
             fd = open(filepath, O_RDWR | O_CREAT, S_IRWXU | S_IRUSR | S_IWUSR);
-            //printf("%d\n", fd);
             // 将每组数据写入临时文件
             count = write(fd, SliceData[i], 1004);
-            //printf("write %d bytes over\n", count);
             close(fd);
         }
+
+        // 生成唯一标识符
+        uuid_generate(uuid);
+        uuid_unparse(uuid, str);
+        // 利用唯一标识符生成唯一的文件路径
+        memset(filepath, '\0', sizeof(filepath));
+        strcat(filepath, BASE_DIR);
+        strcat(filepath, str);
+        strcat(filepath, POST_FIX);
+        // 创建文件并以读写方式打开
+        fd = open(filepath, O_RDWR | O_CREAT, S_IRWXU | S_IRUSR | S_IWUSR);
+        // 将每组数据写入临时文件
+        count = write(fd, SliceData[piece-1], left+1);
+        close(fd);
+        for (int j = 0; j < piece; ++j) {
+            free(SliceData[j]);
+            SliceData[j] = NULL;
+        }
+        free(SliceData);
+        SliceData = NULL;
         /* doing */
     }
     else // 若协议与学生协议不符合
