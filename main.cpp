@@ -3,9 +3,14 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <zconf.h>
 #include <uuid/uuid.h>
+#include <dirent.h>
 #include "PakType.h"
 #include "PakStuInfo.h"
 #include "PakSlice.h"
@@ -13,6 +18,12 @@
 
 #define PATHLEN 100U  // 输入路径的长度限制
 #define PROTLEN 10U  // 协议的长度，即'student://'
+#define MAXSIZE 4096
+#define IP "127.0.0.1"
+#define SERV_PORT 8000
+
+// BASE_DIR为临时文件存放的文件夹
+const char BASE_DIR[PATHLEN] = "/home/junk_chuan/Desktop/send/";
 
 //---------------------------------------文件操作函数--------------------------------
 /*
@@ -80,6 +91,71 @@ int getline(char line[], int max)
         return 0;
 }
 
+
+//-------------------------------------I/O模块-----------------------------------
+// socket 错误报错函数
+void sys_err(const char *ptr,int num)
+{
+    perror(ptr);
+    exit(num);
+}
+
+
+void socket_send(char *src)
+{
+    int sockfd;
+    char buf[MAXSIZE];
+    struct sockaddr_in addr;
+
+    //建立socket套接字
+    sockfd = socket(AF_INET,SOCK_STREAM,0);
+    if(sockfd < 0)
+        sys_err("socket",-1);
+
+    bzero(&addr,sizeof(addr));
+
+    //初始化ip+port
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(SERV_PORT);
+    addr.sin_addr.s_addr = inet_addr(IP);
+
+    //connect将sockfd套接字描述符与服务器端的ip+port联系起来
+    if(connect(sockfd,(struct sockaddr *)&addr,sizeof(addr)) < 0)
+        sys_err("connect",-2);
+
+    // 打开读的文件
+    int fd = open(src,O_RDONLY);
+    if(fd < 0)
+        sys_err("open",-3);
+
+    while(1)
+    {
+        int len = read(fd,buf,sizeof(buf));
+        if(len == 0)
+            break;
+        
+        int _tmp = 0;
+        //考虑若socket缓冲区小于len的情况
+        while(1)
+        {
+            int ret = write(sockfd,buf + _tmp, len - _tmp);
+            if(ret > 0 )
+                _tmp += ret;
+            if(_tmp == ret)
+                break;
+            if(ret < 0)
+            {
+                perror("write");
+                break;
+            }
+        }
+    
+    }
+    
+    close(sockfd);
+}
+
+
 //-------------------------------------主函数---------------------------------
 /*
  * 将读取的文件添加头部
@@ -88,8 +164,6 @@ int getline(char line[], int max)
  * 最后分块存入临时文件
  */
 
-// BASE_DIR为临时文件存放的文件夹
-const char BASE_DIR[PATHLEN] = "/home/junk_chuan/Desktop/temp/";
 // 设置临时文件的后缀为.pak
 const char POST_FIX[5] = ".pak";
 
@@ -134,6 +208,7 @@ int main()
         }
         SliceData[piece-1] = CRC(SliceData[piece-1], left);
 
+        // -------------------------cache
         // 利用uuid生成唯一标识符，以免存储时文件名重复
         uuid_t uuid;
         char *filepath = (char *)malloc(sizeof(char) * PATHLEN);
@@ -156,6 +231,7 @@ int main()
             close(fd);
         }
 
+        // 生成缓存文件
         // 生成唯一标识符
         uuid_generate(uuid);
         uuid_unparse(uuid, str);
@@ -176,6 +252,64 @@ int main()
         free(SliceData);
         SliceData = NULL;
         /* doing */
+
+        // -------------------------socket
+        // socket发送文件
+    	// 循环遍历文件夹
+		DIR *dir;
+    	struct dirent *ptr;
+		if ((dir=opendir(BASE_DIR)) == NULL)
+    	{
+        	perror("Open dir error...");
+        	exit(1);
+    	}
+
+		// 循环读取文件，通过d_type判断是否为文件
+    	while ((ptr=readdir(dir)) != NULL)
+    	{
+    		if(ptr->d_type == 8)    //type refers to file
+    		{
+				// 获取当前文件的文件路径
+    			memset(filepath, '\0', sizeof(filepath));
+    			strcat(filepath, BASE_DIR);
+    			strcat(filepath, ptr->d_name);
+
+    			socket_send(filepath);
+    		}
+    	}
+    	closedir(dir);
+
+    	char comfirmMsg[5] = "OK";
+
+    	int sockfd;
+    	char buf[MAXSIZE];
+    	struct sockaddr_in addr;
+
+    	// 建立socket套接字
+    	sockfd = socket(AF_INET,SOCK_STREAM,0);
+    	if(sockfd < 0)
+        	sys_err("socket",-1);
+
+    	bzero(&addr,sizeof(addr));
+
+    	// 初始化ip+port
+    	addr.sin_family = AF_INET;
+    	addr.sin_port = htons(SERV_PORT);
+    	addr.sin_addr.s_addr = inet_addr(IP);
+
+    	// connect将sockfd套接字描述符与服务器端的ip+port联系起来
+    	if(connect(sockfd,(struct sockaddr *)&addr,sizeof(addr)) < 0)
+        	sys_err("connect",-2);
+        int ret = write(sockfd, comfirmMsg, 5);
+		if(ret < 0)
+        {
+            perror("write");
+            exit(0);
+        }
+        else
+        	close(sockfd);
+        free(filepath);
+        filepath = NULL;
     }
     else // 若协议与学生协议不符合
     {

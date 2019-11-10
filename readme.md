@@ -1,13 +1,21 @@
 ## READ ME BEFORE USING IT
 
+#### Application Scenarios
+
+If you receive some files, it can parse the information in the file through the `student protocol`.
+
+And you can verify the importance of the files.
+
+
+
 input example:
 `student:///home/junk_chuan/Desktop/help.md`
 
+Application background: extract information from sender to judge the importance of information.
+
 the string `student://` means you use the student protocol.
 
-you can **only use the student protocol** because we are vegetable
-
-we cannot recognize other protocols.
+you can **only use the student protocol** because we are vegetable(runoob), we cannot recognize other protocols.
 
 
 ### student protocol design
